@@ -270,12 +270,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boidPrefab: {fileID: 676342791721572840, guid: f897bb6f1e1ca6e488704ea6543a2907, type: 3}
-  foodPrefab: {fileID: 2851859587008556783, guid: 5540831f9bd2a0444bc7c46becba06b7, type: 3}
-  splashParticleSystem: {fileID: 1638789864}
-  boidsToSpawn: 6
-  seekStrength: 1
-  arriveRange: 0.2
-  interactionRange: 0.4
+  boids: []
+  boidsToSpawn: 10
   controlMode: 0
 --- !u!1 &410087039
 GameObject:
@@ -865,11 +861,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b211b5ed880874b4fa61daa8fdf3ffe1, type: 3}
---- !u!198 &1638789864 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 6176020698342423678, guid: b211b5ed880874b4fa61daa8fdf3ffe1, type: 3}
-  m_PrefabInstance: {fileID: 1638789863}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
