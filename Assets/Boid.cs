@@ -50,18 +50,18 @@ public class Boid : MonoBehaviour
 
         // Calculate distance to target
         float distance = toTarget.magnitude;
-        distance -= arriveInnerRadius; // Subtract inner radius to get distance outside the inner radius
-        if (distance < 0) distance = 0; 
+        // distance -= arriveInnerRadius; // Subtract inner radius to get distance outside the inner radius
+        // if (distance < 0) distance = 0; 
 
         // Get direction to target
         Vector3 toTargetNormalized = toTarget.normalized;
 
         // Get desired velocity 
-        Vector3 desiredVelocity = toTargetNormalized * speed;
+        Vector3 desiredVelocity = toTargetNormalized * speedMax;
 
         /* A percentage of the distance to the target if number is greater than one, object is outside the radius
         if number is zero, object is at the target */
-        float distancePercent = distance / arriveOuterRadius;
+        float distancePercent = 1;  //distance / arriveOuterRadius;
 
         // // Keep it in range
         // if (distancePercent > 1) distancePercent = 1; not needed due to statements below
@@ -76,12 +76,18 @@ public class Boid : MonoBehaviour
         else if (distance < arriveOuterRadius)
         {
             // If outside the outer radius, scale down the desired velocity
+            distancePercent = distance / arriveOuterRadius; // Calculate percentage of distance to outer radius
             desiredVelocity *= distancePercent;
             DebugDrawing.DrawCircleDotted(transform.position, Quaternion.Euler(90,0,0), arriveOuterRadius, 16, 0.1f, 0.05f, Color.red, Time.fixedDeltaTime); // Draw outer radius circle
         }
-        desiredVelocity *= distancePercent;
 
-        return desiredVelocity; // Placeholder return value
+        // Change needed to reach desired velocity
+        Vector3 deltaVel = desiredVelocity - rb.linearVelocity;
+
+        // Calculate acceleration based velocity change needed
+        Vector3 accel = deltaVel.normalized * acceleration * distancePercent; // Scale acceleration based on distance percent
+
+        return accel; 
     }
 
     private void Awake()
@@ -110,17 +116,23 @@ public class Boid : MonoBehaviour
     {
         Vector3 accelOut = Vector3.zero; 
 
-        // Whiskers left and right
-        Ray whiskerRight = new Ray(transform.position, Quaternion.AngleAxis(18, transform.right) * transform.forward); // Rotates forward vector by 10 degrees to the right
+        // Create whiskers for obstacle avoidance
+        Ray whiskerRight = new Ray(transform.position, Quaternion.AngleAxis(18, transform.up) * transform.forward); // Right whisker (forward-right)
+        Ray whiskerLeft = new Ray(transform.position, Quaternion.AngleAxis(-18, transform.up) * transform.forward); // Left whisker (forward-left)
+        Ray whiskerUp = new Ray(transform.position, Quaternion.AngleAxis(-18, transform.right) * transform.forward); // Up whisker (forward-up)
+        Ray whiskerDown = new Ray(transform.position, Quaternion.AngleAxis(18, transform.right) * transform.forward); // Down whisker (forward-down)
 
-        Ray whiskerLeft = new Ray(transform.position, Quaternion.AngleAxis(-18, transform.right) * transform.forward); // Rotates forward vector by 10 degrees to the left
-
+        // Checks if the whiskers hit an obstacle
         RaycastHit hitInfoRight;
         RaycastHit hitInfoLeft;
+        RaycastHit hitInfoUp;
+        RaycastHit hitInfoDown;
 
         // Check if the whiskers hit an obstacle
         bool didHitRight = Physics.Raycast(whiskerRight, out hitInfoRight, lookaheadDistance);
         bool didHitLeft = Physics.Raycast(whiskerLeft, out hitInfoLeft, lookaheadDistance);
+        bool didHitUp = Physics.Raycast(whiskerUp, out hitInfoUp, lookaheadDistance);
+        bool didHitDown = Physics.Raycast(whiskerDown, out hitInfoDown, lookaheadDistance);
 
         if (didHitRight)
         {
@@ -143,6 +155,28 @@ public class Boid : MonoBehaviour
         } else
         {
             Debug.DrawRay(whiskerLeft.origin, whiskerLeft.direction * lookaheadDistance, Color.yellow); // Draw the left whisker
+        }
+
+        if (didHitUp)
+        {
+            // Turn down
+            accelOut = -transform.up * acceleration; // Apply acceleration downwards
+
+            Debug.DrawLine(whiskerUp.origin, hitInfoUp.point, Color.red); // Draw a line to the hit point
+        } else
+        {
+            Debug.DrawRay(whiskerUp.origin, whiskerUp.direction * lookaheadDistance, Color.yellow); // Draw the up whisker
+        }
+
+        if (didHitDown)
+        {
+            // Turn up
+            accelOut = transform.up * acceleration; // Apply acceleration upwards
+
+            Debug.DrawLine(whiskerDown.origin, hitInfoDown.point, Color.red); // Draw a line to the hit point
+        } else
+        {
+            Debug.DrawRay(whiskerDown.origin, whiskerDown.direction * lookaheadDistance, Color.yellow); // Draw the down whisker
         }
 
         return accelOut; // No avoidance needed

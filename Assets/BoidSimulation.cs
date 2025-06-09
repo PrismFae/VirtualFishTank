@@ -11,6 +11,8 @@ public class BoidSimulationControl : MonoBehaviour
     public List<Boid> boids = null;
     public List<GameObject> rocks = null; // List of obstacles
     public int boidsToSpawn = 10;
+    bool enableObstacleAvoidance = true;
+
 
     // To select 
     public enum ControlMode
@@ -42,8 +44,8 @@ public class BoidSimulationControl : MonoBehaviour
 
             // Randomize properties of each boid within range
             spawnedBoid.GetComponent<Boid>().speed = Random.Range(.5f, 2.5f);
-            spawnedBoid.GetComponent<Boid>().accelMax = Random.Range(1f, 2f);
-            spawnedBoid.GetComponent<Boid>().speedMax = Random.Range(1f, 2.3f);
+            spawnedBoid.GetComponent<Boid>().accelMax = Random.Range(1.2f, 1.75f);
+            spawnedBoid.GetComponent<Boid>().speedMax = Random.Range(1.2f, 1.75f);
         }
     }
 
@@ -62,7 +64,7 @@ public class BoidSimulationControl : MonoBehaviour
             else if (Input.GetMouseButton(1)) // If right mouse button is pressed
             {
                 boids[i].currentLinearAcceleration -= accel; // Apply negative acceleration
-                Debug.DrawRay(boids[i].transform.position, accel, Color.red); // Draw negative acceleration
+                Debug.DrawRay(boids[i].transform.position, -accel, Color.green); // Draw negative acceleration
             }
         }
     }
@@ -81,7 +83,7 @@ public class BoidSimulationControl : MonoBehaviour
             else if (Input.GetMouseButton(1)) // Evade mode
             {
                 boids[i].currentLinearAcceleration -= accel; // Apply negative acceleration
-                Debug.DrawRay(boids[i].transform.position, accel, Color.red); // Draw negative acceleration
+                Debug.DrawRay(boids[i].transform.position, -accel, Color.green); // Draw negative acceleration
             }
         }
     }
@@ -127,12 +129,12 @@ public class BoidSimulationControl : MonoBehaviour
             if (closestFood != null)
             {
                 // If a food is found, apply the seek acceleration
-                Vector3 accel = boids[i].Arrive(closestFood.transform.position, boids[i].accelMax, 0.17f, 0.38f);
+                Vector3 accel = boids[i].Arrive(closestFood.transform.position, boids[i].accelMax, 0.05f, 0.38f);
                 boids[i].currentLinearAcceleration += accel;
                 Debug.DrawRay(boids[i].transform.position, boids[i].currentLinearAcceleration, Color.green); // Draw acceleration towards food
 
                 // Check if the boid is close enough to the food
-                if (closestFoodDistance < 0.12f)
+                if (closestFoodDistance < 0.02f)
                 {
                     // If the boid is close enough to the food, destroy the food object
                     Destroy(closestFood.gameObject); // Destroy the food object after consumption
@@ -154,7 +156,7 @@ public class BoidSimulationControl : MonoBehaviour
             Destroy(rocks[i]); // Destroy all obstacles
         }
         rocks.Clear(); // Clear the list of obstacles
-        
+
         Start(); // Restart the simulation by calling Start method
     }
 
@@ -180,8 +182,19 @@ public class BoidSimulationControl : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.Space))
         {
             ResetSimulation();
+        } 
+
+        switch (controlMode)
+        {
+            case ControlMode.Food:
+                if (Input.GetMouseButtonDown(0)) // If left mouse button is pressed
+                    SpawnFood(); // Spawn food when in Food mode
+                break;
+            case ControlMode.Obstacle:
+                if (Input.GetMouseButtonDown(0)) // If left mouse button is pressed
+                    SpawnObstacle(); // Spawn obstacle when in Obstacle mode
+                break;
         }
-        
     }
 
     private void FixedUpdate()
@@ -191,33 +204,27 @@ public class BoidSimulationControl : MonoBehaviour
             boids[i].currentLinearAcceleration = Vector3.zero; // Reset acceleration for each boid each cycle
         }
 
+        // Disable obstacle avoidance while mouse is held or in Food mode
+        // enableObstacleAvoidance = !(Input.GetMouseButton(0) || controlMode == ControlMode.Food);
+
+        // if (enableObstacleAvoidance)
+        // {
         foreach (Boid boid in boids)
         {
             // Obstacle avoidance
-            boid.currentLinearAcceleration = boid.ObstacleAvoidance(0.6f, boid.accelMax);
+            boid.currentLinearAcceleration = boid.ObstacleAvoidance(0.55f, boid.accelMax);
         }
+        //}
 
         switch (controlMode)
-        {
-            case ControlMode.Seek:
-                SeekModeControl();
-                break;
-            case ControlMode.Pursue:
-                PursueModeControl();
-                break;
-            case ControlMode.Food:
-                if (Input.GetMouseButtonDown(0)) // If left mouse button is pressed
-                {
-                    SpawnFood(); // Spawn food at targetObject position
-                }
-                break;
-            case ControlMode.Obstacle:
-                if (Input.GetMouseButtonDown(0)) // If left mouse button is pressed
-                {
-                    SpawnObstacle(); // Spawn obstacle at targetObject position
-                }
-                break;
-        }
+            {
+                case ControlMode.Seek:
+                    SeekModeControl();
+                    break;
+                case ControlMode.Pursue:
+                    PursueModeControl();
+                    break;
+            }
         
         FoodArrivalBehaviour();
 
