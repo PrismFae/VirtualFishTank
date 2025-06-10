@@ -11,7 +11,7 @@ public class BoidSimulationControl : MonoBehaviour
     public List<Boid> boids = null;
     public List<GameObject> rocks = null; // List of obstacles
     public int boidsToSpawn = 10;
-    bool enableObstacleAvoidance = true;
+    // bool enableObstacleAvoidance = true;
 
 
     // To select 
